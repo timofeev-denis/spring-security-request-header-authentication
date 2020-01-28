@@ -2,12 +2,16 @@ package ru.code4fun.demo.headerauthentication.config;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpStatus;
 import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.config.annotation.method.configuration.EnableGlobalMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configuration.WebSecurityConfigurerAdapter;
+import org.springframework.security.core.userdetails.User;
 import org.springframework.security.core.userdetails.UserDetailsByNameServiceWrapper;
 import org.springframework.security.core.userdetails.UserDetailsService;
+import org.springframework.security.web.authentication.HttpStatusEntryPoint;
 import org.springframework.security.web.authentication.logout.LogoutFilter;
 import org.springframework.security.web.authentication.preauth.PreAuthenticatedAuthenticationProvider;
 import org.springframework.security.web.authentication.preauth.RequestHeaderAuthenticationFilter;
@@ -16,6 +20,7 @@ import java.util.logging.Logger;
 
 @Configuration
 @EnableWebSecurity
+@EnableGlobalMethodSecurity(prePostEnabled = true, securedEnabled = true, jsr250Enabled = true)
 public class SecurityConfig extends WebSecurityConfigurerAdapter {
 
     public static final String PRINCIPAL_REQUEST_HEADER = "principal";
@@ -26,6 +31,9 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
         http
                 .authorizeRequests()
                 .anyRequest().permitAll()
+                .and()
+                .exceptionHandling()
+                .authenticationEntryPoint(new HttpStatusEntryPoint(HttpStatus.UNAUTHORIZED))
                 .and()
                 .authenticationProvider(preAuthenticatedAuthenticationProvider())
                 .addFilterAfter(requestHeaderAuthenticationFilter(), LogoutFilter.class);
@@ -52,10 +60,10 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
 
     @Bean
     public UserDetailsService customUserDetailsService() {
-        return username -> {
-            log.info("Get user details");
-            return new CustomUserDetails(username);
-        };
+        return username -> User.withUsername(username)
+                .password("")
+                .roles("USER")
+                .build();
     }
 
     public RequestHeaderAuthenticationFilter requestHeaderAuthenticationFilter() throws Exception {
