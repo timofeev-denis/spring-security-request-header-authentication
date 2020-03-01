@@ -1,9 +1,7 @@
 package ru.code4fun.demo.headerauthentication.config;
 
-import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpStatus;
-import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.config.annotation.method.configuration.EnableGlobalMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
@@ -14,9 +12,8 @@ import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.web.authentication.HttpStatusEntryPoint;
 import org.springframework.security.web.authentication.logout.LogoutFilter;
 import org.springframework.security.web.authentication.preauth.PreAuthenticatedAuthenticationProvider;
+import org.springframework.security.web.authentication.preauth.PreAuthenticatedAuthenticationToken;
 import org.springframework.security.web.authentication.preauth.RequestHeaderAuthenticationFilter;
-
-import java.util.logging.Logger;
 
 @Configuration
 @EnableWebSecurity
@@ -24,7 +21,6 @@ import java.util.logging.Logger;
 public class SecurityConfig extends WebSecurityConfigurerAdapter {
 
     public static final String PRINCIPAL_REQUEST_HEADER = "principal";
-    private final Logger log = Logger.getLogger(SecurityConfig.class.getName());
 
     @Override
     protected void configure(HttpSecurity http) throws Exception {
@@ -35,30 +31,22 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
                 .exceptionHandling()
                 .authenticationEntryPoint(new HttpStatusEntryPoint(HttpStatus.UNAUTHORIZED))
                 .and()
-                .authenticationProvider(preAuthenticatedAuthenticationProvider())
-                .addFilterAfter(requestHeaderAuthenticationFilter(), LogoutFilter.class);
+                .addFilterAfter(requestHeaderAuthenticationFilter(), LogoutFilter.class)
+                .authenticationProvider(preAuthenticatedAuthenticationProvider());
     }
 
-    @Bean
-    public AuthenticationManager authenticationManagerBean() throws Exception {
-        return super.authenticationManagerBean();
-    }
-
-    @Bean
     public PreAuthenticatedAuthenticationProvider preAuthenticatedAuthenticationProvider() {
         PreAuthenticatedAuthenticationProvider provider = new PreAuthenticatedAuthenticationProvider();
         provider.setPreAuthenticatedUserDetailsService(userDetailsByNameServiceWrapper());
         return provider;
     }
 
-    @Bean
-    public UserDetailsByNameServiceWrapper userDetailsByNameServiceWrapper() {
-        UserDetailsByNameServiceWrapper<?> serviceWrapper = new UserDetailsByNameServiceWrapper();
+    public UserDetailsByNameServiceWrapper<PreAuthenticatedAuthenticationToken> userDetailsByNameServiceWrapper() {
+        UserDetailsByNameServiceWrapper<PreAuthenticatedAuthenticationToken> serviceWrapper = new UserDetailsByNameServiceWrapper<>();
         serviceWrapper.setUserDetailsService(customUserDetailsService());
         return serviceWrapper;
     }
 
-    @Bean
     public UserDetailsService customUserDetailsService() {
         return username -> User.withUsername(username)
                 .password("")

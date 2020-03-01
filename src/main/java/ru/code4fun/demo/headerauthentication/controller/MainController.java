@@ -19,6 +19,6 @@ public class MainController {
     @GetMapping("/profile")
     @PreAuthorize("hasRole('ROLE_USER')")
     public ResponseEntity<String> profile() {
-        return ResponseEntity.ok("Restricted Area");
+        return ResponseEntity.ok("Hello From Restricted Area");
     }
 }
